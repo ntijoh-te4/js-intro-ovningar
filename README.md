@@ -1,412 +1,210 @@
-
-
 # JS Intro-övningar
 
-För att kunna köra JS utanför webbläsaren använder vi [Node.js](https://nodejs.org/en/) Node.js (eller Node) är en JS-körtidsmiljö baserad på V8-körtidsmiljön från Chrome.
+De här övningarna är utformade för att låta er applicera det ni redan lärt er, men i JavaScript, samtidigt som ni introduceras för språkets särdrag. När ni är klara med dessa går ni vidare till [Exercism](https://exercism.org/tracks/javascript).
 
 ## Installation
 
-Installera Node med `brew update && brew install node`
+Node installeras med [mise](https://mise.jdx.dev/), på samma sätt som Elixir:
 
-Med node följer en [REPL (Read-Eval-Print-Lopp)](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) - liknande Rubys `irb` eller Elixirs `iex`.
+```sh
+mise use -g node@26
+node --version
+```
 
-Starta repln genom att skriva `node` i terminalen.
+## Skapa ditt repo
 
-```js
-➜  ~ node
-Welcome to Node.js v16.9.1.
+Det här repot är en mall. Du ska inte klona eller forka det, utan skapa ett eget repo från det, på samma sätt som ni har ett eget repo för Elixir-övningarna.
+
+1. Klicka på den gröna knappen **Use this template** högst upp på repots sida på GitHub, och välj **Create a new repository**.
+2. Under **Owner**, välj **ntijoh-te4**, inte ditt eget konto.
+3. Döp repot till `js-intro-` följt av ditt namn. Heter du Tage blir det `js-intro-tage`.
+4. Lämna resten som det är och klicka **Create repository**.
+5. Märk repot, som med Elixir-repot: gå till repots **Settings**, sedan **Custom properties** i vänstermenyn, och sätt **repo-type** till `javascript` och `student`.
+
+Klona sedan ditt nya repo och installera testverktygen:
+
+```sh
+git clone https://github.com/ntijoh-te4/js-intro-tage.git
+cd js-intro-tage
+npm install
+```
+
+Committa och pusha när du får ett test grönt, inte bara när du är klar med allt.
+
+## REPL
+
+Precis som Elixir har `iex`, följer en REPL med Node. Starta den genom att skriva `node` i terminalen:
+
+```
+$ node
+Welcome to Node.js v26.7.0.
 Type ".help" for more information.
 > 1 + 2
 3
 > "hello, world".toUpperCase()
 'HELLO, WORLD'
+> [1, 2, 3].map(x => x * 2)
+[ 2, 4, 6 ]
 ```
 
-För att stänga ner din repl, kan man antingen trycka `ctrl+c` 2 gånger eller skriva `.exit`
+Avsluta med `.exit` eller genom att trycka `ctrl+c` två gånger. REPL:en är perfekt när du snabbt vill testa en metod utan att behöva skapa en hel fil.
 
-Repls är bra när man vill testa kodsnuttar eller försöka klura ut hur t.ex en funktion fungerar, utan att behövera skapa, spara och köra filer.
+## Tester
 
-## Syntax och Evolution
+Testerna är redan skrivna. Ditt mål är att få dem att lysa grönt.
 
-Det sägs att Brendan Eich skapade Javascript på 10 dagar, och syftet var att göra enkla script till webbsidor, inte avancerade applikationer (som det används till nu). Tidsbegränsningen och avgränsningen har lett till en del egenheter i språket.
+```sh
+npm test                      # kör alla tester en gång
+npm run watch                 # kör om testerna varje gång du sparar
+npx vitest run 01-funktioner  # bara en mapp
+npx vitest run smallest       # bara en fil
+```
 
-## Variabler och Scope
-
-Från början skapade man variabler i javascript på följande sätt:
-
-````js
-x = 1
-````
-
-Problemet med att skapa variabler på detta sätt i js är att variabelns *[scope](https://en.wikipedia.org/wiki/Scope_(computer_science))* blir globalt. Globala variabler[^1] vill man av varje skäl undvika då det blir mer eller mindre omöjligt att veta vad som finns i en variabel.
-
-Se nedanstående exempel:
-
-````js
-function foo() {
-   y = 3;
-   return "foo" + y;
-}
-x = foo()
-console.log(x) //=> 'foo3'
-console.log(y) //=> 3
-````
-
-Fast variablen `y` är definerad inne i funktionen `foo()` går den att komma åt utfanför funktionen, dess scope blir globalt.
-
-[^1]: Globala *statiska* "variabler" är mer ok.
-
-I js finns det totalt 4 olika nivåer av scopes:
-
-1. **Global** - Synligt överallt (som i exemplet ovan)
-2. **Function** - Synlig inom en funktion (och dess sub-block/scopes)
-3. **Block** - Synlig inom ett block (och dess sub-block/scopes)
-4. **Module** - Synlig inom en modul (en samling funktioner)
-
-Förenklat kan man säga att varje gång du skriver `{` i js öppnas ett nytt scope (som sen stängs med `}`)
-
-Exempel:
+Vi använder [Vitest](https://vitest.dev/) som testverktyg. Det använder `describe`, `it` och `expect`, precis som Jest (vilket är vad ni kommer möta på Exercism). Ett test ser ut så här:
 
 ```js
-// Utanför funktioner: Global scope
-const first_name = "Test";
-const last_name = "Testson";
-const test_results = [18, 12, 16, 23, 16];
+import { describe, it, expect } from "vitest";
+import { smallest } from "./smallest.js";
 
-function full_name() { // nytt scope (funktion)
-  return `${first_name} ${last_name}`;
-}
+describe("smallest", () => {
+  it("när det minsta är först", () => {
+    expect(smallest(1, 2)).toBe(1);
+  });
+});
+```
 
-function max_test_result() { // nytt scope (funktion)
-  i = 0;
-  let max = 0;
-  while (i < test_results.length) {// nytt scope (while)
-    const current_test_result = test_results[i];
-    if (current_test_result > max) { // nytt scope (if)
-      max = current_test_result;
-    }
-    i += 1;
-  }
-  return max;
+**Viktigt om jämförelser:**
+* `toBe` använder strikt jämförelse (`===`).
+* `toEqual` jämför innehållet i objekt och arrayer. Detta behövs eftersom `[1, 2] === [1, 2]` är `false` i JavaScript (de är två olika instanser i minnet). Mer om detta i övning 6.
+
+Varje övning består av en fil med en funktion som för tillfället kastar ett fel. Ta bort raden med `throw` och implementera funktionen. Läs testfilen (`.test.js`) noga, den fungerar som din specifikation.
+
+### Funktioner
+
+I dessa övningar använder vi funktionsdeklarationer:
+
+```js
+export function smallest(a, b) {
+  ...
 }
 ```
 
-Baserat på exemplet ovan, vad kommer följande kod resultera i när den körs?
-
-````javascript
-console.log(i);
-max_result = max_text_result();
-console.log(max_result);
-console.log(i);
-console.log(max);
-````
-
-Följande sätt finns för att deklarera variabler i js:
-
-### Var
-
-Variabler deklarerade med nyckelordet **`var`** har **function scope**, dvs de går att använda överallt inne i funktionen de är deklarerade (om de inte är deklarerade utanför en funktion, då får de global scope.)
-
-````js
-var foo = 1 // foo är global
-
-function bar() {
-  var baz = 2; // baz går att använda överallt inne i funktionen
-  if (foo == baz) { // foo är ju global
-    var qux = 3; //qux går att använda överallt inne i funktionen
-  }
-  return qux; // qux är deklarerad inne i if-blocket, men går att komma åt utanför eftersom den är deklarerad med var
-}
-````
-
-Vad händer om if-satsen aldrig körs? Jo, qux blir `undefined`. Antagligen inte något man vill. Se "[The Billion Dollar Mistake](https://en.wikipedia.org/wiki/Null_pointer#History)"
-
-### Funktionsparametrar
-
-Variabler som kommer till en funktion via dess parametrar/argument får samma scope som variabler deklarerade med `var`
-
-````js
-function foo(bar, baz) {
-  return bar + baz;
-}
-
-foo(1, 2) // 3
-Console.log(bar) // undefined (bar finns enbart inne i funktionen foo)
-Console.log(baz) // undefined (baz finns enbart inne i funktionen foo)
-````
-
-### Let
-
-Variabler som är deklarerade med nyckelordet  **`let`** har **block scope**, det vill säga att de enbart går att använda i det scope de är deklarerade i (och i eventuella nästade scopes.)
+På Exercism kommer ni ofta se pilfunktioner tilldelade en konstant:
 
 ```js
-function foo(bar, baz) {
-  if (bar < 18) {
-    let qux = 10; //qux finns tillgängligt inne i if-satsen, men inte utanför
-    if baz >= 65 {
-      qux -= 5; //qux finns tillgängligt i den nästade if-satsen (nästat scope)
-    }
-  }
-  return qux; // fel - qux finns inte tillgänglig här
-}
-foo(17,76); //Uncaught ReferenceError: qux is not defined
+export const smallest = (a, b) => {
+  ...
+};
 ```
 
-### Const
+Det är i praktiken samma sak. Pilfunktioner är standard när man skickar funktioner som argument (till exempel till `map`), vilket ni får prova i övning 3. Vi använder `function` för namngivna funktioner här eftersom det liknar Elixirs `def`.
 
-Variabler som är deklarerade med nyckelordet **`const`** har precis som variable deklarerade med **`let`** **block scope**, det vill säga att de enbart går att använda i det scope de är deklarerade i (och i eventuella nästade scopes.), med följande skillnad: **`const`** skapar en read-only variabel, det vill säga man får inte tilldela ett annat värde till variabeln, den är så att säga, *konstant*. 
+Kom ihåg att använda `export` så att testfilen kan importera funktionen.
 
-```js
-function foo(bar) {
-  const baz = 10; //baz får inte tilldelas ett nytt värde
-  if (bar < 18) {
-      baz -= 5; //försök till modifiering av baz
-    }
-  return baz;
-}
-foo(17); //Uncaught TypeError: Assignment to constant variable.
-```
-Observera dock att om variabeln refererar till t.ex ett objekt, map eller array får objektets/arrayens/mapens interna state förändras:
-```js
-function qux(zoop) {
-  const thud = [10]; //thud tilldelas en array
-  if (zoop < 18) {
-      thud.push(5); //ett nytt värde läggs på arrayen (tillåtet, det är "samma" array)
-    }
-  return thud;
-}
-qux(17); // [10, 5]
-```
+## Rekommendationer
 
-### Initiering av variabler utan värde
-
-Variabler deklareade med **`let`** går att deklarera utan att tilldela ett värde (de tilldelas automagiskt värdet `undefined`).
-
-Variabler deklarerade med **`const`** måste tilldelas ett värde när de deklareras
-
-```js
-function foo(bar) {
-    const baz = 10; // const; tillåtet, ett värde tilldelas vid deklararationen
-    //const qux; //const; inte tillåtet, inget värde tilldelas (Uncaught SyntaxError: Missing initializer in const declaration)
-    let zoop, qirp; //let; tillåtet, variabeln zoop och qirp deklareras utan värde (initieras automagiskt till `undefined`)
-    let tink = 5; //let; tillåtet
-    if (bar < 18) {
-        zoop = 10;
-    }
-    return [baz, tink, zoop, qirp]; //tillåtet, men qirp kommer vara `undefined`
-  }
-const grulp = foo(17);  // [ 10, 5, 10, undefined ]
-```
-
-När du försöker göra något med värden som är `undefined` kommer dit program få problem:
-
-### Rekommendation
-
- -1. Använd inte globala variabler
-
-0. Använd alltid **`let`** eller **`const`** när du deklarerar variabler.
-
-1. Föredra  **`const`** framför **`let`** (och ändra till **`let`** om det visar sig att det inte går).
-
-2. Deklarering
-
-   a. Deklarera alla variabler i början av funktionen
-
-   b. Skapa inte nya variabler inne i t.ex if-satser eller loopar (om du inte är helt säker på att de inte kommer användas någon annan stans).
-
-   c. Tilldela alla variabler ett explicit värde (låt dem inte bli `undefined`)
-
-   ```js
-   function foo(bar) {
-     const baz = 10
-     let qux = 0
-     let zoop = bar + 4
-     ... //resten av funktionen (inga nya variabler introduceras)
-   }
-   ```
-
-
-
-## "Null"
-
-Likt det finns flera sätt att deklarera variabler i Javascript, finns det även flera olika "null"-värden.
-
-### Null
-
-> *The **`null`** value represents the intentional absence of any object value. It is one of JavaScript's [primitive values](https://developer.mozilla.org/en-US/docs/Glossary/Primitive) and is treated as [falsy](https://developer.mozilla.org/en-US/docs/Glossary/Falsy) for boolean operations.*
->
-> -- [MDN Javascript Reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/null)
-
-### Undefined
-
-> A variable that has not been assigned a value is of type `undefined`. A method or statement also returns `undefined` if the variable that is being evaluated does not have an assigned value. A function returns `undefined` if a value was not [`returned`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/return).
->
-> -- [MDN Javascript Reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined)
-
-### Null vs Undefined
-
-> **Undefined means a variable has been declared but has yet not been assigned a value.** **Null is an assignment value**. It can be assigned to a variable as a representation of no value
->
-> -- [Geeks for Geeks - Undefined Vs Null in JavaScript](https://www.geeksforgeeks.org/undefined-vs-null-in-javascript/)
-
-![null_vs_undefined](./img/null_vs_undefined.png)
-
-## Jämförelser
-
-Js är svagt typat, det vill säga, det operationer som i de flesta tillåtna språk inte hade varit tillåtna *kan* vara tillåtna i js, t.ex addera ett tal och en sträng
-
-```js
-1 + '3' // '13'
-'3' + 1 // '31'
-```
-
-Se [Wat](https://www.destroyallsoftware.com/talks/wat).
-
-Detta är problematiskt, men extra problematiskt vid jämförelser:
-
-```js
-'3' == 3; // true
-```
-
-Jämförelseoperatorn `==` gör typomvandlingar för att se till att båda operanderna har samma datatyp. 
-
-Det finns även jämförelseoperatorn `===` ("triple equals") som inte gör typomvandlingar:
-
-```js
-'3' === 3; // false
-```
-
-### Rekommendation
-
-0. Använd **alltid** `===` vid jämförelser
+1. Använd `const` framför `let`. Använd aldrig `var`.
+2. Använd `===` framför `==`. Alltid.
+3. Bygg nya arrayer istället för att mutera befintliga.
+4. Undvik globala variabler. Håll allt i funktioner och exportera dem.
+5. Är du osäker på vad en metod gör? Testa i REPL:en, läs sedan på MDN.
 
 ## Övningar
 
-### 1. Smallest of Two
+### 1. Funktioner och jämförelser
 
-Givet två integers som input ska funktionen returnera det lägsta värdet.
+`01-funktioner/`: `smallest`, `largest`, `ticketPrice`.
 
-### 2. Largest of three
+Här gör ni samma grundövningar som i Elixir, men med `if` och `return` istället för guards och pattern matching.
 
-Givet tre integers som input ska funktionen returnera det största värdet.
+**Tänk på följande:**
+* **Använd alltid `===`**, aldrig `==`. Den senare gör automatiska typomvandlingar (t.ex. blir `"3" == 3` sant), vilket ofta leder till buggar.
+* **Explicit return:** Till skillnad från Elixir returnerar inte JS automatiskt det sista uttrycket. En funktion utan `return` returnerar `undefined`.
+* **Parenteser:** I `if (villkor) { ... }` är parenteserna runt villkoret obligatoriska.
 
-### 3. Smallest of four
+Länkar: [MDN: if...else](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/if...else), [MDN: Strict equality](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Strict_equality)
 
-Givet fyra integers som Input ska funktionen returnera det lägsta värdet.
+### 2. Arrayer för hand
 
-### 4. TicketPrice
+`02-arrayer-for-hand/`: `first`, `last`, `isEmpty`, `prepend`, `append`, `concat`, `sum`, `contains`, `reverse`.
 
-Givet en integer `age` som input ska funktionen returnera korrekt pris enligt listan nedan:
+Ni har tidigare löst dessa med `[head | tail]` och rekursion. Gör det igen! **Använd inga inbyggda arraymetoder** i denna mapp: inte `push`, `concat`, `reduce`, `includes`, `reverse` eller `at`. Det ni får använda:
 
-- Under 18: 10
-- Från och med 18 till och med 64: 20
-- Över 64: 15
+| Elixir | JavaScript | Funktion |
+|---|---|---|
+| `[head \| tail] = list` | `const [head, ...tail] = list;` | Destrukturering |
+| `[val \| list]` | `[val, ...list]` | Spread (lägg till först) |
+| | `[...list, val]` | Spread (lägg till sist) |
+| `length(list)` | `list.length` | Egenskap (inte funktion) |
+| `list == []` | `list.length === 0` | Kontrollera om tom |
+| `def f(list, acc \\ [])` | `function f(list, acc = []) {` | Default-värde för argument |
 
-### 5. Next Number
+**Två viktiga skillnader från Elixir:**
 
-Tar ett heltal som input och ger nästa tal som output.
+1. **Basfallet är en `if`-sats:** Eftersom JS saknar pattern matching i funktionshuvudet kan ni inte skriva `def sum([]), do: 0`. Istället skriver ni `if (list.length === 0) return 0;` högst upp i funktionen.
+2. **Mutation:** Arrayer i JS kan ändras. `list.push(3)` ändrar originalarrayen på plats. För att undvika detta och följa modern praxis (som i React) bör ni använda *spread-syntax* för att skapa nya arrayer. Testerna för `prepend`, `append`, `concat` och `reverse` kontrollerar att originalarrayen förblir orörd.
 
-### 6. Is Empty
+Länkar: [MDN: Destructuring](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring), [MDN: Spread syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax)
 
-Tar en `Array` som input och returnerar true om den är tom, annars false
+### 3. Arrayer med inbyggda metoder
 
-### 7. First of
+`03-arrayer-inbyggt/`: `first`, `last`, `sum`, `contains`, `reverse` (igen), samt `average`, `doubled`, `evens`, `count`, `max`.
 
-Tar en Array som input och returnerar det första elementet.
+Nu får ni använda det inbyggda. Det ni tidigare skrev med rekursion finns nu som metoder direkt på arrayen. Elixirs `Enum` motsvaras av följande i JS:
 
-### 8. Last of
+| Elixir | JavaScript |
+|---|---|
+| `Enum.map(list, fn x -> x * 2 end)` | `list.map((x) => x * 2)` |
+| `Enum.filter(list, fn x -> x > 2 end)` | `list.filter((x) => x > 2)` |
+| `Enum.reduce(list, 0, fn x, acc -> acc + x end)` | `list.reduce((acc, x) => acc + x, 0)` |
+| `Enum.member?(list, 3)` | `list.includes(3)` |
+| `Enum.at(list, 0)` | `list.at(0)` |
+| `Enum.reverse(list)` | `list.toReversed()` |
 
-Tar en List som input och returnerar sista elementet.
+**Notera:** I `reduce` kommer ackumulatorn först i JS, och startvärdet placeras efter funktionen.
 
-### 9. Prepend
+Här använder vi **pilfunktioner**. `(x) => x * 2` är motsvarigheten till `fn x -> x * 2 end`. Om funktionen bara består av en rad behövs varken måsvingar `{}` eller `return`.
 
-Tar en Array och en Integer som input och returnerar en Array bestående av integern och arraken (med integern på första plats).
+**Varning:** Vissa metoder muterar arrayen (`push`, `pop`, `reverse`, `sort`, `splice`), medan andra returnerar en ny kopia (`map`, `filter`, `slice`, `toReversed`, `toSorted`). Kolla MDN eller testa i REPL:en om du är osäker.
 
+Länkar: [MDN: Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array), [MDN: Arrow functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions)
 
-### 10. Append
+### 4. Strängar
 
-Tar en Array och en Integer som input och returnerar en Array bestående av integern och arraken (med integern på sista plats).
+`04-strangar/`: `chomp`, `countChar`, `words`, `isPalindrome`.
 
-### 11. Length
+Strängar är oföränderliga (immutable) i JS, precis som i Elixir. Varje metod returnerar en ny sträng. JS har ingen direkt motsvarighet till `String.graphemes`, men du kan använda `str.split("")` för att få en array av tecken, bearbeta den med arraymetoder, och sedan använda `arr.join("")` för att sätta ihop den igen.
 
-Tar en Array som input och returnerar längden (antalet element) på arraken.
+Länkar: [MDN: String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)
 
-### 12. Sum
+### 5. Rövarspråket
 
-Tar en Array med Integers som input och returnerar summan av alla talen.
+`05-rovarspraket/`: `rovarize`, `derovarize`.
 
-### 13. Average
-
-Tar en Array med Integers som input och returnerar medelvärdet av alla talen.
-
-### 14. Concat
-
-Tar två Arrayer som input och returnerar en ny Array, där båda arrayerna konkateneras (sätts ihop).
-
-### 15. Starts With
-
-Tar en sträng och ett tecken som input och returnerar true/false beroende på om strängen börjar med tecknet eller ej.
-
-### 16. Ends With
-
-Tar en sträng och ett tecken som input och returnerar true/false beroende på om strängen slutar med tecknet eller ej.
-
-### 17. Chomp
-
-Tar en sträng som input och returnerar en sträng där en eventuell radbrytning ("\n") tagits bort från slutet.
-
-### 18. Index Of
-
-Tar en sträng och ett tecken som input och returnerar tecknets position om det finns, annars nil.
-
-### 19. Count (String)
-
-Tar en sträng och ett tecken som input och returnerar antalet förekomster av tecknet i strängen
-
-### 20. Count (Array)
-
-Tar en Array och ett nummer som input och returnerar antalet förekomster av numret i listan.
-
-### 21. Contains (String)
-
-Tar en sträng och ett tecken som input och returnerar true/false om tecknet finns i strängen eller ej.
-### 22. Contains (Array)
-
-Tar en list och ett värde och returnerar true/false beroende på om värdet finns i listan eller ej
-
-### 23. Remove (String)
-
-Tar två strängar som input och returnerar ny sträng där alla förekomster av sträng2 i sträng1 är borttagna.
-
-### 24. Replace (String)
-
-Tar tre strängar som input och returnerar en ny sträng där alla förekomster av sträng2 i sträng1 är ersatta med sträng3
-
-### 25. Split (String)
-
-Tar en sträng och ett tecken som input och returnerar en Array, där elementen i listan är alla delar av strängen som är avskiljda med tecknet
-
-#### Exempel
-* `split("1;2;3;4;5", ";") #=> ["1", "2", "3", "4", "5"]`
-* `split("Hello World", " ") #=> ["Hello", "World"]`
-* `split("This is a line\nthis is another line\nthis is a line too", "\n") #=> ["This is a line", "this is another line", "this is a line too"]`
-
-### 26. Rovarize 
-
-Tar en sträng och omvandlar strängen från svenska till rövarspråket.
-
-#### Exempel
-
-* `rovarize("Bajsar björnar i skogen?") #=> "Bobajojsosaror bobjojörornonaror i soskokogogenon"`
-
-#### Länkar
+Samma logik som i Elixir. `rovarize` kan lösas med `split`, `map` och `join`. `derovarize` är mer utmanande då du behöver analysera strängen tre tecken i taget.
 
 * [Rövarspråket - Wikipedia](https://sv.wikipedia.org/wiki/R%C3%B6varspr%C3%A5ket)
 
-### 27. Derovarize
+### 6. Gissa output
 
-Tar en sträng och omvandlar strängen från rövarspråket till svenska.
+`06-gissa-output/`: `scope.js`, `coercion.js`, `nullish.js`.
 
-#### Exempel
-* `derovarize("Tothohisos a bobitot hoharordoderor") #=> 'This is a bit harder'`
-* `derovarize("Bobajojsosaror bobjojörornonaror i soskokogogenon"') #=> 'Bajsar björnar i skogen?'`
+Här finns inga tester. Istället hittar du tre filer med `console.log`. **Skriv din gissning i kommentaren på varje rad innan du kör filen.** Kör sedan med `node 06-gissa-output/scope.js` och jämför. Det du gissade fel på är det du bör läsa in dig mer på.
+
+Här är de tre områdena där JS skiljer sig markant från vad ni är vana vid:
+
+**Scope (Räckvidd).** `var` är funktions-scoped, vilket betyder att den syns i hela funktionen även utanför det block den skapades i. `let` och `const` är block-scoped (syns bara mellan `{` och `}`). **Använd aldrig `var`.** Använd `const` som standard och `let` endast om värdet måste ändras.
+
+*Viktigt:* `const` innebär att namnet inte kan bindas om, inte att värdet är oföränderligt. `const list = [1]; list.push(2)` fungerar utmärkt.
+
+**Typomvandling (Coercion).** `+` med en sträng resulterar i konkatenering, medan `-` med en sträng resulterar i subtraktion. `==` försöker omvandla typerna innan jämförelse, medan `===` inte gör det. Använd alltid `===`. Se gärna videon [Wat](https://www.destroyallsoftware.com/talks/wat) (4 min).
+
+**Två sorters "ingenting".** 
+* `undefined`: Värdet man får när något inte har definierats (t.ex. en variabel utan värde, en funktion utan `return` eller ett index utanför en array).
+* `null`: Ett värde man sätter medvetet för att markera att något är "tomt".
+
+Att läsa ett fält på `null` eller `undefined` kraschar programmet. För att undvika detta finns:
+* `?.` (Optional chaining): Läser fältet om det finns, annars returnerar `undefined`.
+* `??` (Nullish coalescing): Ger ett standardvärde om vänstersidan är `null` eller `undefined`. Detta är säkrare än `||`, som även byter ut `0` och tomma strängar `""`.
+
+Länkar: [MDN: var](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var), [MDN: Equality comparisons](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness), [MDN: Optional chaining](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining), [MDN: Nullish coalescing](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing)
